@@ -4,7 +4,7 @@ import axios from 'axios';
 import MapDesign from './assets/mapdesign';
 
 const menuItems = [
-  '지도', '대시보드', '장비 제어', '데이터 분석', '알림 관리', '설정', '시스템 로그'
+  '지도', '대시보드', '장비 제어', '알림 관리', '데이터 분석', '설정', '시스템 로그'
 ];
 
 const Map = () => {
@@ -21,8 +21,8 @@ const Map = () => {
       case '지도': navigate('/map'); break;
       case '대시보드': navigate('/dashboard'); break;
       case '장비 제어': navigate('/control'); break;
-      case '데이터 분석': navigate('/data'); break;
       case '알림 관리': navigate('/alarm'); break;
+      case '데이터 분석': navigate('/data'); break;
       case '설정': navigate('/settings'); break;
       case '시스템 로그': navigate('/system-logs'); break;
       default: break;
@@ -51,34 +51,56 @@ const Map = () => {
     }
   };
 
-  // 🔹 value 기준 상태/색상 결정 함수 추가
   const getStatusAndColor = (value) => {
     if (value === null || value === undefined) return { status: 'normal', color: '#2ecc71' };
-    if (value >= 80) return { status: 'danger', color: '#e74c3c' };
-    if (value >= 60) return { status: 'warning', color: '#f39c12' };
+    if (value >= 20) return { status: 'danger', color: '#e74c3c' };
+    if (value >= 6) return { status: 'warning', color: '#f39c12' };
     return { status: 'normal', color: '#2ecc71' };
   };
 
   const fetchSewerData = async () => {
     try {
-      const res = await axios.get('http://192.168.0.222:8000/api/accountapp/drains/');
-      const formattedData = res.data.map(item => {
-        // 🔹 value 기반 상태/색상 적용
-        const { status, color } = getStatusAndColor(item.value);
+      const res = await axios.get('http://192.168.1.106:8000/api/accountapp/drains/');
+      const formattedData = await Promise.all(
+        res.data.map(async (item) => {
+          let value = 0;
+          try {
+            const postData = {
+              region: item.region || "경기도",
+              sub_region: item.sub_region || "고양시",
+              name: item.name
+            };
+            const sensorRes = await axios.post(
+              'http://192.168.1.106:8000/api/accountapp/sensorvalue/',
+              postData,
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+            if (sensorRes.data && sensorRes.data.length > 0) {
+              value = sensorRes.data[0].value;
+            }
+          } catch (err) {
+            console.error(`Sensor value 가져오기 실패 (하수구 ${item.name}):`, err);
+          }
 
-        return {
-          id: item.id,
-          name: item.name || item.location || `하수구-${item.id}`,
-          lat: item.latitude || item.lat || 37.5665,
-          lng: item.longitude || item.lng || 126.9780,
-          status,
-          color,
-          value: item.value || 0,   // 🔹 value 저장
-          waterLevel: item.waterLevel || 0,
-          temperature: item.temperature || 0,
-          lastUpdate: item.last_updated || item.lastUpdate || '',
-        };
-      });
+          const { status, color } = getStatusAndColor(value);
+
+          return {
+            id: item.id,
+            name: item.name || item.location || `하수구-${item.id}`,
+            lat: item.latitude || item.lat || 37.5665,
+            lng: item.longitude || item.lng || 126.9780,
+            status,
+            color,
+            value,
+            waterLevel: item.waterLevel || 0,
+            temperature: item.temperature || 0,
+            lastUpdate: item.last_updated || item.lastUpdate || '',
+            region: item.region || '',
+            sub_region: item.sub_region || ''
+          };
+        })
+      );
+
       setSewerData(formattedData);
     } catch (error) {
       console.error('하수구 목록 불러오기 실패:', error);
@@ -87,9 +109,9 @@ const Map = () => {
 
   const deleteSewer = async (id) => {
     try {
-      await axios.delete(`http://192.168.0.222:8000/api/accountapp/drains/${id}/`);
+      await axios.delete(`http://192.168.0.2:8000/api/accountapp/drains/${id}/`);
       setSelectedSewer(null);
-      await fetchSewerData(); // 삭제 후 목록 갱신
+      await fetchSewerData();
     } catch (err) {
       alert('삭제 실패: ' + (err.response?.data?.message || '서버 오류'));
       console.error(err);
@@ -137,7 +159,7 @@ const Map = () => {
     if (!container || !window.kakao || !window.kakao.maps) return;
 
     const options = {
-      center: new window.kakao.maps.LatLng(37.5665, 126.9780),
+      center: new window.kakao.maps.LatLng(37.7132, 126.8900),
       level: 3,
     };
     const map = new window.kakao.maps.Map(container, options);
@@ -150,14 +172,12 @@ const Map = () => {
       const name = prompt('하수구 이름을 입력하세요:');
       if (!name) return;
 
-      // 주소 변환 (좌표 -> 주소)
       geocoder.coord2Address(latlng.getLng(), latlng.getLat(), async (result, status) => {
         if (status === window.kakao.maps.services.Status.OK) {
           const addressInfo = result[0].address;
-
-          const region = addressInfo.region_1depth_name || '알수없음';
-          const sub_region = addressInfo.region_2depth_name || '알수없음';
-          const detail_region = addressInfo.region_3depth_name || '알수없음';
+          const region = addressInfo.region_1depth_name || '';
+          const sub_region = addressInfo.region_2depth_name || '';
+          const detail_region = addressInfo.region_3depth_name || '';
 
           const newSewer = {
             name,
@@ -169,13 +189,11 @@ const Map = () => {
           };
 
           try {
-            console.log('보내는 하수구 데이터:', newSewer);
             await axios.post(
-              'http://192.168.0.222:8000/api/accountapp/drains/',
+              'http://192.168.1.106:8000/api/accountapp/drains/',
               newSewer,
               { headers: { 'Content-Type': 'application/json' } }
             );
-
             await fetchSewerData();
           } catch (error) {
             alert('하수구 등록 실패: ' + (error.response?.data?.message || '오류 발생'));
@@ -217,6 +235,7 @@ const Map = () => {
       onCloseModal={() => setSelectedSewer(null)}
       getStatusText={getStatusText}
       onDeleteSewer={deleteSewer}
+      kakaoMap={kakaoMap} // 추가
     />
   );
 };

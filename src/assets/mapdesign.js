@@ -1,6 +1,4 @@
-// ✅ mapdesign.js 전체 코드 (하수구 SVG 포함)
-
-import React from 'react';
+import React, { useState } from 'react';
 
 const MapDesign = ({
   sewerData,
@@ -10,8 +8,13 @@ const MapDesign = ({
   onMenuClick,
   onCloseModal,
   getStatusText,
-  onDeleteSewer
+  onDeleteSewer,
+  kakaoMap
 }) => {
+  const [searchName, setSearchName] = useState('');
+  const [inputLat, setInputLat] = useState('');
+  const [inputLng, setInputLng] = useState('');
+
   const containerStyle = {
     position: 'relative',
     width: '100%',
@@ -106,20 +109,38 @@ const MapDesign = ({
 
   const mapAreaStyle = {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 5,
     overflow: 'hidden',
     border: '2px solid #3498db',
     boxShadow: '0 0 4px rgba(0,0,0,.15)',
   };
 
-  const waterLevel = typeof selectedSewer?.waterLevel === 'number' ? selectedSewer.waterLevel : 0;
-  const temperature = typeof selectedSewer?.temperature === 'number' ? selectedSewer.temperature : 0;
+  const handleNameSearch = () => {
+    if (!searchName || !kakaoMap) return;
+    const target = sewerData.find(s => s.name === searchName);
+    if (target) {
+      const position = new window.kakao.maps.LatLng(target.lat, target.lng);
+      kakaoMap.setCenter(position);
+      kakaoMap.setLevel(3);
+    }
+  };
+
+  const handleLatLngSearch = () => {
+    if (!kakaoMap) return;
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const position = new window.kakao.maps.LatLng(lat, lng);
+      kakaoMap.setCenter(position);
+      kakaoMap.setLevel(3);
+    }
+  };
 
   return (
     <div style={containerStyle}>
       <header style={headerStyle}>
         <div>스마트 하수구 관리 시스템</div>
-        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자님 환영합니다</div>
+        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자</div>
       </header>
 
       <nav style={navStyle}>
@@ -137,7 +158,6 @@ const MapDesign = ({
 
       <main style={mainAreaStyle}>
         <div style={mapTitleStyle}>
-          {/* 하수구 SVG 아이콘 */}
           <svg width="24" height="24" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <circle cx="100" cy="100" r="90" fill="#4a4a4a" stroke="#333" strokeWidth="4"/>
             <g stroke="#666" strokeWidth="2" fill="none">
@@ -156,6 +176,93 @@ const MapDesign = ({
             <circle cx="100" cy="100" r="90" fill="none" stroke="#777" strokeWidth="1" opacity="0.5"/>
           </svg>
           <span>하수구 위치</span>
+
+          <div style={{ marginLeft: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+  {/* 하수구 이름 검색 */}
+  <input
+    type="text"
+    placeholder="하수구 이름"
+    value={searchName}
+    onChange={e => setSearchName(e.target.value)}
+    style={{
+      padding: '6px 10px',
+      fontSize: 12,
+      borderRadius: 5,
+      border: '1px solid #ccc',
+      outline: 'none',
+      width: 120,
+      transition: '0.2s',
+    }}
+    onFocus={e => e.target.style.borderColor = '#3498db'}
+    onBlur={e => e.target.style.borderColor = '#ccc'}
+  />
+  <button
+    onClick={handleNameSearch}
+    style={{
+      padding: '6px 12px',
+      fontSize: 12,
+      borderRadius: 5,
+      border: 'none',
+      backgroundColor: '#737574ff',
+      color: '#fff',
+      cursor: 'pointer',
+      transition: '0.2s',
+    }}
+  >
+    검색
+  </button>
+
+  {/* 위도/경도 입력 */}
+  <input
+    type="text"
+    placeholder="위도"
+    value={inputLat}
+    onChange={e => setInputLat(e.target.value)}
+    style={{
+      width: 100,
+      padding: '6px 10px',
+      fontSize: 12,
+      borderRadius: 5,
+      border: '1px solid #ccc',
+      outline: 'none',
+      transition: '0.2s',
+    }}
+  
+  />
+  <input
+    type="text"
+    placeholder="경도"
+    value={inputLng}
+    onChange={e => setInputLng(e.target.value)}
+    style={{
+      width: 100,
+      padding: '6px 10px',
+      fontSize: 12,
+      borderRadius: 5,
+      border: '1px solid #ccc',
+      outline: 'none',
+      transition: '0.2s',
+    }}
+    
+  />
+  <button
+    onClick={handleLatLngSearch}
+    style={{
+      padding: '6px 12px',
+      fontSize: 12,
+      borderRadius: 5,
+      border: 'none',
+      backgroundColor: '#737574ff',
+      color: '#fff',
+      cursor: 'pointer',
+      transition: '0.2s',
+    }}
+  
+  >
+    이동
+  </button>
+</div>
+
         </div>
 
         <div id="kakao-map" style={mapAreaStyle} />
@@ -229,68 +336,20 @@ const MapDesign = ({
                 <strong>상태:</strong><br />
                 <span style={{ color: selectedSewer.color }}>{getStatusText(selectedSewer.status)}</span>
               </div>
+
               <div style={{ padding: 8, background: '#f8f9fa', borderRadius: 5 }}>
-                <strong>수위:</strong><br />
-                {waterLevel.toFixed(1)}%
+                <strong>적재량 수치:</strong><br />
+                {selectedSewer.value}
               </div>
-              <div style={{ padding: 8, background: '#f8f9fa', borderRadius: 5 }}>
-                <strong>온도:</strong><br />
-                {temperature.toFixed(1)}°C
-              </div>
-              <div style={{ padding: 8, background: '#f8f9fa', borderRadius: 5 }}>
-                <strong>최종 업데이트:</strong><br />
-                {selectedSewer.lastUpdate || '정보 없음'}
-              </div>
-              <div style={{ padding: 8, background: '#f8f9fa', borderRadius: 5 }}>
+
+              <div style={{ padding: 8, background: '#f8f9fa', borderRadius: 5, gridColumn: 'span 2' }}>
                 <strong>위치:</strong><br />
                 위도: {selectedSewer.lat}<br />
                 경도: {selectedSewer.lng}
               </div>
-              <div style={{ padding: 8, background: '#f8f9fa', borderRadius: 5 }}>
-                <strong>관리 구역:</strong><br />
-                서울시 중구
-              </div>
             </div>
 
-            <h4 style={{ margin: '15px 0 10px', color: '#2c3e50' }}>수위 게이지</h4>
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: 40,
-                backgroundColor: '#ecf0f1',
-                borderRadius: 10,
-                overflow: 'hidden',
-                border: '2px solid #bdc3c7',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  width: `${waterLevel}%`,
-                  height: '100%',
-                  backgroundColor: selectedSewer.color,
-                  transition: 'width 0.5s ease',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  fontWeight: 'bold',
-                  fontSize: 14,
-                  color: '#2c3e50',
-                }}
-              >
-                {waterLevel.toFixed(1)}%
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+            <div style={{ display: 'flex', gap: 10 }}>
               <button
                 style={{
                   flex: 1,

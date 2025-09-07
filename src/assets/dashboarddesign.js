@@ -1,9 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const DashboardDesign = ({
   onMenuClick,
   activeMenu,
-  emergencyAlert,
   sensorsStatus,
   motorStatus,
   rainfallData,
@@ -13,10 +12,12 @@ const DashboardDesign = ({
   const mapRef = useRef(null);      // 지도 참조
   const markersRef = useRef([]);    // 마커 배열 참조
 
-  // SVG를 Base64로 변환
+  const [searchName, setSearchName] = useState('');
+  const [inputLat, setInputLat] = useState('');
+  const [inputLng, setInputLng] = useState('');
+
   const toBase64 = (str) => window.btoa(unescape(encodeURIComponent(str)));
 
-  // map.js와 동일한 마커 이미지 생성
   const createMarkerImage = (color, status) => {
     const symbol = status === 'danger' ? '!' : status === 'warning' ? '?' : 'V';
     const svg = `
@@ -32,7 +33,29 @@ const DashboardDesign = ({
     );
   };
 
-  // 카카오맵 초기화 및 하수구 마커 표시
+  // --- 이름 검색 ---
+  const handleNameSearch = () => {
+    if (!searchName || !mapRef.current) return;
+    const target = sewerData.find(s => s.name === searchName);
+    if (target) {
+      const position = new window.kakao.maps.LatLng(target.lat, target.lng);
+      mapRef.current.setCenter(position);
+      mapRef.current.setLevel(3);
+    }
+  };
+
+  // --- 위도/경도 이동 ---
+  const handleLatLngSearch = () => {
+    if (!mapRef.current) return;
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const position = new window.kakao.maps.LatLng(lat, lng);
+      mapRef.current.setCenter(position);
+      mapRef.current.setLevel(3);
+    }
+  };
+
   useEffect(() => {
     if (!window.kakao || !window.kakao.maps) return;
 
@@ -42,7 +65,7 @@ const DashboardDesign = ({
 
       if (!mapRef.current) {
         mapRef.current = new window.kakao.maps.Map(container, {
-          center: new window.kakao.maps.LatLng(37.5665, 126.978),
+          center: new window.kakao.maps.LatLng(37.7132, 126.8900),
           level: 3,
         });
       }
@@ -53,20 +76,18 @@ const DashboardDesign = ({
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
 
-      // 새 마커 생성
       if (sewerData && sewerData.length > 0) {
         sewerData.forEach(sewer => {
-          // Map.js 조건 반영: value/status 기반 색상 재계산
-          let color = '#2ecc71'; // 기본 green
+          let color = '#2ecc71';
           let status = 'normal';
           if (sewer.value !== null && sewer.value !== undefined) {
-            if (sewer.value >= 67) {
+            if (sewer.value >= 20) {
               color = '#e74c3c';
               status = 'danger';
-            } else if (sewer.value >= 34) {
+            } else if (sewer.value >= 6) {
               color = '#f39c12';
               status = 'warning';
-            } else if (sewer.value >= 1) {
+            } else if (sewer.value >= 0) {
               color = '#2ecc71';
               status = 'normal';
             } else {
@@ -93,33 +114,6 @@ const DashboardDesign = ({
 
   return (
     <div>
-      {/* 긴급 알림 배너 */}
-      {emergencyAlert && (
-        <div style={{
-          backgroundColor: '#e74c3c',
-          borderRadius: 5,
-          color: 'white',
-          padding: '10px 20px',
-          marginBottom: 20,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontWeight: 'bold',
-          fontSize: 16,
-        }}>
-          <span>⚠️ 긴급 알림: {emergencyAlert.message}</span>
-          <button onClick={emergencyAlert.onConfirm} style={{
-            backgroundColor: '#c0392b',
-            border: 'none',
-            borderRadius: 3,
-            color: 'white',
-            padding: '5px 10px',
-            cursor: 'pointer',
-            fontSize: 12,
-          }}>확인</button>
-        </div>
-      )}
-
       <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
         {/* 지도 영역 */}
         <section style={{
@@ -131,12 +125,51 @@ const DashboardDesign = ({
           minHeight: 380,
           boxSizing: 'border-box',
         }}>
-          <h2 style={{ marginTop: 0, fontSize: 14, fontWeight: 'bold' }}>실시간 하수구 위치</h2>
-          <div id="kakao-map" style={{ width: '100%', height: 400, borderRadius: 3, position: 'relative' }} />
+          <h2 style={{ marginTop: 0, fontSize: 14, fontWeight: 'bold' }}>
+            실시간 하수구 위치
+            {/* 검색 영역 */}
+            <span style={{ marginLeft: 10 }}>
+              <input
+                type="text"
+                placeholder="하수구 이름"
+                value={searchName}
+                onChange={e => setSearchName(e.target.value)}
+                style={{ padding: 4, fontSize: 12, borderRadius: 5, border: '1px solid #ccc', marginRight: 4 }}
+              />
+              <button
+                onClick={handleNameSearch}
+                style={{ padding: '4px 8px', fontSize: 12, cursor: 'pointer', borderRadius: 5, backgroundColor: '#737574ff', color: 'white', border: 'none' }}
+              >
+                검색
+              </button>
+              <input
+                type="text"
+                placeholder="위도"
+                value={inputLat}
+                onChange={e => setInputLat(e.target.value)}
+                style={{ width: 80, padding: 4, fontSize: 12, borderRadius: 5, border: '1px solid #ccc', marginLeft: 10 }}
+              />
+              <input
+                type="text"
+                placeholder="경도"
+                value={inputLng}
+                onChange={e => setInputLng(e.target.value)}
+                style={{ width: 80, padding: 4, fontSize: 12, borderRadius: 5, border: '1px solid #ccc', marginLeft: 4 }}
+              />
+              <button
+                onClick={handleLatLngSearch}
+                style={{ padding: '4px 8px', fontSize: 12, cursor: 'pointer', borderRadius: 5, backgroundColor: '#737574ff', color: 'white', border: 'none', marginLeft: 4 }}
+              >
+                이동
+              </button>
+            </span>
+          </h2>
+          <div id="kakao-map" style={{ width: '100%', height: 400, borderRadius: 5, position: 'relative' }} />
         </section>
 
         {/* 센서 상태 */}
         <section style={{ flex: 1.8, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* 기존 센서/모터 카드 */}
           <div style={{
             backgroundColor: '#ecf0f1',
             borderRadius: 5,
@@ -149,7 +182,7 @@ const DashboardDesign = ({
               {/* 수거함 현황 */}
               <div style={{
                 backgroundColor: 'white',
-                borderRadius: 3,
+                borderRadius: 5,
                 border: '1px solid #bdc3c7',
                 flex: 1,
                 padding: 10,
@@ -168,7 +201,7 @@ const DashboardDesign = ({
               {/* 강우 */}
               <div style={{
                 backgroundColor: 'white',
-                borderRadius: 3,
+                borderRadius: 5,
                 border: '1px solid #bdc3c7',
                 flex: 1,
                 padding: 10,
@@ -195,20 +228,13 @@ const DashboardDesign = ({
             border: '1px solid #bdc3c7',
             boxSizing: 'border-box',
           }}>
-            <h2 style={{ marginTop: 0, fontSize: 14, fontWeight: 'bold', color: '#2c3e50' }}>모터 작동 상태</h2>
+            <h2 style={{ marginTop: 0, fontSize: 14, fontWeight: 'bold', color: '#2c3e50' }}>작동 상태</h2>
             <div style={{ display: 'flex', gap: 20 }}>
-              {/* 청소 모터 */}
-              <div style={{ backgroundColor: 'white', borderRadius: 3, border: '1px solid #bdc3c7', flex: 1, padding: 10 }}>
+              <div style={{ backgroundColor: 'white', borderRadius: 5, border: '1px solid #bdc3c7', flex: 1, padding: 10 }}>
                 <p style={{ fontWeight: 'bold', fontSize: 12, color: '#2c3e50' }}>청소 모터</p>
                 <p style={{ color: '#27ae60', fontSize: 20, fontWeight: 'bold' }}>{motorStatus.cleanMotor.status}</p>
-                <p style={{ fontSize: 12, color: '#2c3e50' }}>속도: {motorStatus.cleanMotor.speed}%</p>
-                <div style={{ width: '100%', height: 10, backgroundColor: '#ecf0f1', borderRadius: 5, marginTop: 10 }}>
-                  <div style={{ width: `${motorStatus.cleanMotor.speed}%`, height: '100%', backgroundColor: '#27ae60', borderRadius: 5 }} />
-                </div>
               </div>
-
-              {/* 비 감지 센서 */}
-              <div style={{ backgroundColor: 'white', borderRadius: 3, border: '1px solid #bdc3c7', flex: 1, padding: 10 }}>
+              <div style={{ backgroundColor: 'white', borderRadius: 5, border: '1px solid #bdc3c7', flex: 1, padding: 10 }}>
                 <p style={{ fontWeight: 'bold', fontSize: 12, color: '#2c3e50' }}>비 감지 센서</p>
                 <p style={{ color: '#27ae60', fontSize: 20, fontWeight: 'bold' }}>{motorStatus.rainSensor.status}</p>
                 <p style={{ fontSize: 12, color: '#2c3e50' }}>{motorStatus.rainSensor.mode}</p>
@@ -229,10 +255,42 @@ const DashboardDesign = ({
       }}>
         <h2 style={{ fontSize: 14, fontWeight: 'bold', color: '#2c3e50', marginTop: 0, marginBottom: 20 }}>시간별 강수량 그래프</h2>
         <svg width="960" height="200" viewBox="0 0 960 200" style={{ width: '100%', height: 'auto' }}>
-          <polyline fill="none" stroke="#3498db" strokeWidth="2"
-            points={rainfallData.map((point, i) => `${i * 60 + 10},${200 - point.value * 2}`).join(' ')} />
-          {rainfallData.map((point, i) => <circle key={i} cx={i * 60 + 10} cy={200 - point.value * 2} r={4} fill="#3498db" />)}
-          {rainfallData.map((point, i) => <text key={i} x={i * 60 + 10} y={195} fontSize={10} fill="#2c3e50" textAnchor="middle">{point.time}</text>)}
+          {(() => {
+            if (!rainfallData || rainfallData.length === 0) return null;
+
+            const svgWidth = 960;
+            const svgHeight = 200;
+            const paddingX = 20;
+            const maxValue = Math.max(...rainfallData.map(p => p.value)) || 1;
+
+            const points = rainfallData.map((p, i) => {
+              const x = paddingX + (i / (rainfallData.length - 1)) * (svgWidth - 2 * paddingX);
+              const y = svgHeight - (p.value / maxValue) * svgHeight;
+              return { x, y, time: p.time, value: p.value };
+            });
+
+            return (
+              <>
+                <polyline
+                  fill="none"
+                  stroke="#3498db"
+                  strokeWidth="2"
+                  points={points.map(p => `${p.x},${p.y}`).join(' ')}
+                />
+                {points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={4} fill="#3498db" />)}
+                {points.map((p, i) => <text
+                  key={i}
+                  x={p.x}
+                  y={195}
+                  fontSize={10}
+                  fill="#2c3e50"
+                  textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'}
+                >
+                  {p.time}
+                </text>)}
+              </>
+            );
+          })()}
         </svg>
       </section>
     </div>

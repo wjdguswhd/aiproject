@@ -1,175 +1,61 @@
-// datadesign.js
 import React from 'react';
 
-const DataDesign = ({
-  activeMenu,
-  menuItems,
-  onMenuClick,
-  startDate,
-  endDate,
-  onChangeStartDate,
-  onChangeEndDate,
-}) => {
-  const layout = {
-    container: {
-      width: '100%',
-      height: '100vh',
-      backgroundColor: '#ecf0f1',
-      position: 'relative',
-      fontFamily: 'Arial, sans-serif',
-    },
-    header: {
-      height: 60,
-      backgroundColor: '#2c3e50',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 20px',
-      fontWeight: 'bold',
-      fontSize: 18,
-    },
-    nav: {
-      position: 'absolute',
-      top: 60,
-      left: 0,
-      width: 200,
-      height: 'calc(100% - 60px)',
-      backgroundColor: '#34495e',
-      color: 'white',
-      padding: 20,
-      boxSizing: 'border-box',
-    },
-    menuItem: (isActive) => ({
-      padding: '8px 12px',
-      borderRadius: 5,
-      backgroundColor: isActive ? '#3498db' : 'transparent',
-      color: isActive ? 'white' : '#bdc3c7',
-      marginBottom: 8,
-      cursor: 'pointer',
-    }),
-    content: {
-      position: 'absolute',
-      top: 60,
-      left: 200,
-      right: 0,
-      bottom: 0,
-      padding: 20,
-      overflowY: 'auto',
-      boxSizing: 'border-box',
-    },
-    section: {
-      backgroundColor: '#ecf0f1',
-      borderRadius: 10,
-      padding: 20,
-      marginBottom: 20,
-      boxShadow: '0 0 4px rgba(0,0,0,0.1)',
-      border: '1px solid #bdc3c7',
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      marginBottom: 10,
-      color: '#2c3e50',
-    },
-    input: {
-      padding: 6,
-      marginRight: 10,
-      borderRadius: 4,
-      border: '1px solid #bdc3c7',
-    },
-    button: {
-      padding: '6px 12px',
-      borderRadius: 4,
-      backgroundColor: '#3498db',
-      color: 'white',
-      border: 'none',
-      cursor: 'pointer',
-    },
-  };
+const DataDesign = ({ activeMenu, menuItems, onMenuClick, kakaoMap, teams, selectedTeam, onSelectTeam }) => {
+  const containerStyle = { position: 'relative', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', backgroundColor: '#ecf0f1', overflow: 'hidden' };
+  const headerStyle = { height: 60, backgroundColor: '#2c3e50', color: 'white', display: 'flex', alignItems: 'center', padding: '0 20px', fontWeight: 'bold', fontSize: 18, justifyContent: 'space-between' };
+  const navStyle = { position: 'absolute', top: 60, left: 0, width: 200, height: 'calc(100% - 60px)', backgroundColor: '#34495e', padding: '20px 10px', boxSizing: 'border-box', color: 'white', overflowY: 'auto' };
+  const menuItemStyle = (isActive) => ({ padding: '6px 12px', borderRadius: 5, backgroundColor: isActive ? '#3498db' : 'transparent', color: isActive ? 'white' : '#bdc3c7', cursor: 'pointer', userSelect: 'none', marginBottom: 10 });
+  const mainAreaStyle = { position: 'absolute', top: 80, left: 220, right: 20, bottom: 20, backgroundColor: 'white', borderRadius: 10, boxShadow: '0 0 4px rgba(0,0,0,.15)', border: '2px solid #95a5a6', padding: 20, boxSizing: 'border-box', display: 'flex', flexDirection: 'row', gap: 20 };
+  const mapAreaStyle = { flex: 3, borderRadius: 5, overflow: 'hidden', border: '2px solid #3498db', boxShadow: '0 0 4px rgba(0,0,0,.15)' };
+  const sidePanelStyle = { flex: 1.2, display: 'flex', flexDirection: 'column', border: '1px solid #bdc3c7', borderRadius: 8, padding: 10, backgroundColor: '#f8f9fa', overflowY: 'auto' };
+  const teamCardStyle = (isActive) => ({
+    border: `2px solid ${isActive ? '#3498db' : '#ccc'}`,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: isActive ? '#ecf6fd' : 'white',
+    cursor: 'pointer'
+  });
 
   return (
-    <div style={layout.container}>
-      {/* Header */}
-      <header style={layout.header}>
+    <div style={containerStyle}>
+      <header style={headerStyle}>
         <div>스마트 하수구 관리 시스템</div>
-        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자님 환영합니다</div>
+        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자</div>
       </header>
 
-      {/* Navigation */}
-      <nav style={layout.nav}>
+      <nav style={navStyle}>
         <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 10 }}>메뉴</div>
-        {menuItems.map((menu) => (
-          <div
-            key={menu}
-            style={layout.menuItem(activeMenu === menu)}
-            onClick={() => onMenuClick(menu)}
-          >
+        {menuItems.map(menu => (
+          <div key={menu} style={menuItemStyle(activeMenu === menu)} onClick={() => onMenuClick(menu)}>
             {menu}
           </div>
         ))}
       </nav>
 
-      {/* Content */}
-      <div style={layout.content}>
-        {/* 기간 필터 */}
-        <div style={layout.section}>
-          <div style={layout.sectionTitle}>분석 기간 설정</div>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => onChangeStartDate(e.target.value)}
-            style={layout.input}
-          />
-          ~
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => onChangeEndDate(e.target.value)}
-            style={layout.input}
-          />
-          <button style={layout.button}>조회</button>
-        </div>
+      <main style={mainAreaStyle}>
+        <div id="kakao-map" style={mapAreaStyle} />
 
-        {/* 쓰레기 적재량 추이 그래프 */}
-        <div style={layout.section}>
-          <div style={layout.sectionTitle}>📈 쓰레기 적재량 추이</div>
-          <div style={{ height: 250, backgroundColor: 'white', borderRadius: 6 }}>[그래프 영역]</div>
+        <div style={sidePanelStyle}>
+          <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>팀별 최적 경로</div>
+          {teams.map(team => (
+            <div key={team.team_id} style={teamCardStyle(selectedTeam && selectedTeam.team_id === team.team_id)} onClick={() => onSelectTeam(team)}>
+              <div style={{ fontWeight: 'bold', marginBottom: 5 }}>{team.team_name}</div>
+              <div style={{ fontSize: 12, color: '#555' }}>작업 수: {team.tasks.length}</div>
+              <ul style={{ marginTop: 5, paddingLeft: 15, fontSize: 12 }}>
+                {team.tasks.map((task, idx) => (
+                  <li key={idx} style={{ marginBottom: 5 }}>
+                    <div>{task.location_name} - {task.risk_level}</div>
+                    <div style={{ fontSize: 11, color: '#555' }}>예정시작: {task.scheduled_start}</div>
+                    <div style={{ fontSize: 11, color: '#555' }}>예정종료: {task.scheduled_end}</div>
+                    <div style={{ fontSize: 11, color: '#555' }}>예상 소요: {task.estimated_duration_min}분</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-
-        {/* 강우 예측 vs 실제 */}
-        <div style={layout.section}>
-          <div style={layout.sectionTitle}>🌧 강우 예측 vs 실제</div>
-          <div style={{ height: 250, backgroundColor: 'white', borderRadius: 6 }}>[바 차트 영역]</div>
-        </div>
-
-        {/* 캘린더 */}
-        <div style={layout.section}>
-          <div style={layout.sectionTitle}>📅 위험 시점 예측 캘린더</div>
-          <div style={{ height: 140, backgroundColor: 'white', borderRadius: 6 }}>[캘린더 컴포넌트]</div>
-        </div>
-
-        {/* 통계 요약 */}
-        <div style={layout.section}>
-          <div style={layout.sectionTitle}>📊 통계 요약</div>
-          <div style={{ padding: 10, backgroundColor: 'white', borderRadius: 6 }}>
-            <div>• 평균 적재량: 67.3%</div>
-            <div>• 최대 적재량: 89.1%</div>
-            <div>• 청소 횟수: 3회</div>
-            <div>• 강우 일수: 2일</div>
-            <br />
-            <div><strong>예측 정확도</strong></div>
-            <div>• 적재량 예측: 87.3%</div>
-            <div>• 강우 예측: 92.1%</div>
-            <div>• 위험도 예측: 84.7%</div>
-            <br />
-            <div><strong>권장 사항</strong></div>
-            <div>• 수요일 오전 청소 권장</div>
-            <div>• 강우 예보 시 사전 청소</div>
-            <div>• 센서 캘리브레이션 필요</div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,284 +1,198 @@
-// alarmdesign.js
 import React from 'react';
 
-const AlarmDesign = ({ activeMenu, menuItems, onMenuClick, alerts }) => {
-  // 스타일 정의 (생략 없이)
-  const containerStyle = {
-    width: '100%',
-    height: '100vh',
-    backgroundColor: '#ecf0f1',
-    fontFamily: 'Arial, sans-serif',
-    overflow: 'hidden',
-    position: 'relative',
-  };
+const AlarmDesign = ({ activeMenu, menuItems, schedules, onMenuClick, onStatusChange, onCreateSchedule, statusFilter, onStatusFilterChange }) => {
 
-  const headerStyle = {
-    height: 60,
-    backgroundColor: '#2c3e50',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 20px',
-    fontSize: 18,
-    fontWeight: 'bold',
+  // --- 공통 스타일 ---
+  const containerStyle = { 
+    width: '100%', 
+    height: '100vh', 
+    backgroundColor: '#ecf0f1', 
+    fontFamily: 'Arial, sans-serif', 
+    overflow: 'hidden', 
+    position: 'relative' 
   };
-
-  const navStyle = {
-    position: 'absolute',
-    top: 60,
-    left: 0,
-    width: 200,
-    height: 'calc(100% - 60px)',
-    backgroundColor: '#34495e',
-    padding: '20px 10px',
-    color: 'white',
-    boxSizing: 'border-box',
+  const headerStyle = { 
+    height: 60, 
+    backgroundColor: '#2c3e50', 
+    color: 'white', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    padding: '0 20px', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
   };
-
-  const menuItemStyle = (isActive) => ({
-    padding: '6px 12px',
-    borderRadius: 5,
-    backgroundColor: isActive ? '#3498db' : 'transparent',
-    color: isActive ? 'white' : '#bdc3c7',
-    cursor: 'pointer',
-    marginBottom: 10,
+  const navStyle = { 
+    position: 'absolute', 
+    top: 60, 
+    left: 0, 
+    width: 200, 
+    height: 'calc(100% - 60px)', 
+    backgroundColor: '#34495e', 
+    padding: '20px 10px', 
+    color: 'white', 
+    boxSizing: 'border-box' 
+  };
+  const menuItemStyle = (isActive) => ({ 
+    padding: '6px 12px', 
+    borderRadius: 5, 
+    backgroundColor: isActive ? '#3498db' : 'transparent', 
+    color: isActive ? 'white' : '#bdc3c7', 
+    cursor: 'pointer', 
+    marginBottom: 10 
   });
+  const contentStyle = { 
+    position: 'absolute', 
+    left: 220, 
+    top: 60, 
+    right: 0, 
+    bottom: 0, 
+    padding: 20, 
+    boxSizing: 'border-box', 
+    overflowY: 'scroll' 
+  };
+  const titleStyle = { fontSize: 24, fontWeight: 'bold', color: '#2c3e50', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 };
+  const statsContainerStyle = { display: 'flex', gap: 15, marginBottom: 25, flexWrap: 'wrap' };
+  const statCardStyle = { backgroundColor: 'white', padding: '15px 20px', borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', flex: '1 1 180px', textAlign: 'center' };
+  const statNumberStyle = { fontSize: 24, fontWeight: 'bold', marginBottom: 5 };
+  const statLabelStyle = { fontSize: 12, color: '#7f8c8d', fontWeight: '500' };
+  const tableContainerStyle = { backgroundColor: 'white', borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' };
+  const tableHeaderStyle = { backgroundColor: '#34495e', color: 'white', padding: '15px 20px', fontSize: 16, fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+  const tableStyle = { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }; // fixed layout 추가
+  const thStyle = { backgroundColor: '#2c3e50', color: 'white', padding: '12px 15px', fontSize: 13, fontWeight: '600', textAlign: 'left' };
+  const tdStyle = { backgroundColor: 'white', padding: '12px 15px', fontSize: 13, color: '#2c3e50', borderBottom: '1px solid #ecf0f1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
 
-  const contentStyle = {
-    position: 'absolute',
-    left: 220,
-    top: 60,
-    right: 0,
-    bottom: 0,
-    padding: 20,
-    boxSizing: 'border-box',
-    overflowY: 'auto',
+  const statusBadgeStyle = (status) => {
+    const colors = {
+      'scheduled': { bg: '#3498db', text: '예정됨' },
+      'done': { bg: '#27ae60', text: '완료됨' },
+      'cancelled': { bg: '#e74c3c', text: '취소됨' }
+    };
+    const style = colors[status] || colors['scheduled'];
+    return { backgroundColor: style.bg, color: 'white', padding: '4px 8px', borderRadius: 12, fontSize: 11, fontWeight: '600', display: 'inline-block', minWidth: 48, textAlign: 'center' };
   };
 
-  const sectionTitle = {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 10,
+  const riskBadgeStyle = (risk) => {
+    let bgColor;
+    if (risk >= 80) { bgColor = '#e74c3c'; }
+    else if (risk >= 60) { bgColor = '#f39c12'; }
+    else if (risk >= 40) { bgColor = '#f1c40f'; }
+    else { bgColor = '#27ae60'; }
+    return { backgroundColor: bgColor, color: 'white', padding: '3px 6px', borderRadius: 10, fontSize: 11, fontWeight: '600', display: 'inline-block' };
   };
 
-  const cardRowStyle = {
-    display: 'flex',
-    gap: 20,
-    marginBottom: 10,
-  };
+  const formatRisk = (risk) => Number.isInteger(risk) ? risk : risk.toFixed(1);
+  const getStatusText = (status) => ({ 'scheduled': '예정됨', 'done': '완료됨', 'cancelled': '취소됨' }[status] || status);
+  const formatUTCDate = (datetime) => new Date(datetime).toISOString().slice(0,10);
+  const formatUTCTime = (datetime) => new Date(datetime).toISOString().slice(11,16);
 
-  const cardStyle = (borderColor) => ({
-    flex: 1,
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    border: `2px solid ${borderColor}`,
-  });
+  const totalSchedules = schedules.length;
+  const scheduledCount = schedules.filter(s => s.status === 'scheduled').length;
+  const completedCount = schedules.filter(s => s.status === 'done').length;
+  const highRiskCount = schedules.filter(s => s.risk_score >= 80).length;
 
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: '#ecf0f1',
-    borderRadius: 5,
-    overflow: 'hidden',
-  };
-
-  const thStyle = {
-    backgroundColor: '#34495e',
-    color: 'white',
-    padding: '8px 12px',
-    fontSize: 12,
-  };
-
-  const tdStyle = {
-    backgroundColor: 'white',
-    padding: '8px 12px',
-    fontSize: 12,
-    color: '#2c3e50',
-    borderBottom: '1px solid #ccc',
-  };
-
-  const badgeStyle = (bgColor) => ({
-    backgroundColor: bgColor,
-    color: 'white',
-    padding: '2px 8px',
-    borderRadius: 4,
-    fontSize: 10,
-  });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case '긴급': return '#e74c3c';
-      case '경고': return '#e67e22';
-      case '정보': return '#3498db';
-      case '완료': return '#27ae60';
-      default: return '#7f8c8d';
-    }
-  };
-
-  const grayBoxStyle = {
-    backgroundColor: '#dfe6e9',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
-  };
-
-  const largeGrayBoxStyle = {
-    ...grayBoxStyle,
-    minHeight: 300,
-    padding: 24,
-  };
-
-  const searchBoxStyle = {
-    marginTop: 12,
-    display: 'flex',
-    gap: 8,
-  };
-
-  const searchInputStyle = {
-    flex: 1,
-    padding: 6,
-    borderRadius: 4,
-    border: '1px solid #bdc3c7',
-    fontSize: 12,
-  };
-
-  const searchBtnStyle = {
-    width: 36,
-    backgroundColor: '#3498db',
-    border: 'none',
-    borderRadius: 4,
-    color: 'white',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  };
-
-  const paginationStyle = {
-    marginTop: 12,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: 12,
-    color: '#2c3e50',
-  };
-
-  const pageBtnStyle = {
-    width: 40,
-    height: 24,
-    backgroundColor: '#3498db',
-    border: 'none',
-    borderRadius: 4,
-    color: 'white',
-    cursor: 'pointer',
-  };
+  const filteredSchedules = statusFilter === "all" ? schedules : schedules.filter(s => s.status === statusFilter);
 
   return (
     <div style={containerStyle}>
       <header style={headerStyle}>
         <div>스마트 하수구 관리 시스템</div>
-        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자님 환영합니다</div>
+        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자</div>
       </header>
 
       <nav style={navStyle}>
         <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 10 }}>메뉴</div>
-        {menuItems.map((menu) => (
-          <div
-            key={menu}
-            style={menuItemStyle(activeMenu === menu)}
-            onClick={() => onMenuClick(menu)}
-          >
-            {menu}
-          </div>
+        {menuItems.map(menu => (
+          <div key={menu} style={menuItemStyle(activeMenu === menu)} onClick={() => onMenuClick(menu)}>{menu}</div>
         ))}
       </nav>
 
       <main style={contentStyle}>
-        {/* 알림 현황 */}
-        <div style={sectionTitle}>🔔 알림 현황</div>
-        <div style={grayBoxStyle}>
-          <div style={cardRowStyle}>
-            <div style={cardStyle('#e74c3c')}>
-              <div style={{ fontSize: 12, color: '#e74c3c' }}>긴급 알림</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#e74c3c' }}>
-                {alerts.filter(a => a.level === '긴급').length}건
-              </div>
-            </div>
-            <div style={cardStyle('#e67e22')}>
-              <div style={{ fontSize: 12, color: '#e67e22' }}>경고 알림</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#e67e22' }}>
-                {alerts.filter(a => a.level === '경고').length}건
-              </div>
-            </div>
-            <div style={cardStyle('#3498db')}>
-              <div style={{ fontSize: 12, color: '#3498db' }}>정보 알림</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#3498db' }}>
-                {alerts.filter(a => a.level === '정보').length}건
-              </div>
-            </div>
-            <div style={cardStyle('#27ae60')}>
-              <div style={{ fontSize: 12, color: '#27ae60' }}>처리 완료</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#27ae60' }}>
-                {alerts.filter(a => a.status === '완료').length}건
-              </div>
-            </div>
-          </div>
+        <div style={titleStyle}>AI 스케줄링</div>
 
-          <div style={searchBoxStyle}>
-            <input type="text" placeholder="알림 검색..." style={searchInputStyle} />
-            <button style={searchBtnStyle}>🔍</button>
-          </div>
+        <div style={statsContainerStyle}>
+          <div style={statCardStyle}><div style={{...statNumberStyle, color: '#3498db'}}>{totalSchedules}</div><div style={statLabelStyle}>전체 스케줄</div></div>
+          <div style={statCardStyle}><div style={{...statNumberStyle, color: '#f39c12'}}>{scheduledCount}</div><div style={statLabelStyle}>예정된 작업</div></div>
+          <div style={statCardStyle}><div style={{...statNumberStyle, color: '#2ecc71'}}>{completedCount}</div><div style={statLabelStyle}>완료된 작업</div></div>
+          <div style={statCardStyle}><div style={{...statNumberStyle, color: '#e74c3c'}}>{highRiskCount}</div><div style={statLabelStyle}>위험 지역</div></div>
         </div>
 
-        {/* 최근 알림 이력 */}
-        <div style={sectionTitle}>📋 최근 알림 이력</div>
-        <div style={largeGrayBoxStyle}>
+        <div style={tableContainerStyle}>
+          <div style={tableHeaderStyle}>
+            <span>스케줄 목록 ({filteredSchedules.length}개)</span>
+            <button 
+              onClick={onCreateSchedule}
+              style={{ fontSize: 12, padding: '8px 8px', borderRadius: 4, border: 'none', backgroundColor: '#3498db', color: 'white', cursor: 'pointer' }}
+            >
+              스케줄 만들기
+            </button>
+          </div>
+
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>시간</th>
-                <th style={thStyle}>유형</th>
-                <th style={thStyle}>내용</th>
-                <th style={thStyle}>상태</th>
-                <th style={thStyle}>조치</th>
+                <th style={thStyle}>팀</th>
+                <th style={thStyle}>하수구 ID</th>
+                <th style={thStyle}>위치 좌표</th>
+                <th style={thStyle}>예정 시작</th>
+                <th style={thStyle}>예정 종료</th>
+                <th style={thStyle}>소요시간</th>
+                <th style={thStyle}>위험도</th>
+                <th style={thStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 120 }}>
+                    상태
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => onStatusFilterChange(e.target.value)}
+                      style={{ fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid #bdc3c7', backgroundColor: 'white', color: '#2c3e50' }}
+                    >
+                      <option value="all">전체</option>
+                      <option value="scheduled">예정</option>
+                      <option value="done">완료</option>
+                    </select>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {alerts.map((alert, idx) => (
+              {filteredSchedules.map((s, idx) => (
                 <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? 'white' : '#f8f9fa' }}>
-                  <td style={tdStyle}>{alert.timestamp}</td>
+                  <td style={tdStyle}><span style={{ backgroundColor: '#ecf0f1', color: '#2c3e50', padding: '3px 6px', borderRadius: 4, fontSize: 11, fontWeight: '600' }}> {s.assigned_crew}</span></td>
+                  <td style={tdStyle}><span style={{ fontWeight: '600', color: '#2c3e50' }}>#{s.drain}</span></td>
+                  <td style={tdStyle}><div style={{ fontSize: 11, color: '#7f8c8d' }}>{s.lat.toFixed(5)}<br/>{s.lng.toFixed(5)}</div></td>
+                  <td style={tdStyle}><div style={{ fontSize: 12, fontWeight: '500' }}>{formatUTCDate(s.scheduled_start)}</div><div style={{ fontSize: 11, color: '#7f8c8d' }}>{formatUTCTime(s.scheduled_start)}</div></td>
+                  <td style={tdStyle}><div style={{ fontSize: 12, fontWeight: '500' }}>{formatUTCDate(s.scheduled_end)}</div><div style={{ fontSize: 11, color: '#7f8c8d' }}>{formatUTCTime(s.scheduled_end)}</div></td>
+                  <td style={tdStyle}><span style={{ backgroundColor: '#ecf0f1', color: '#2c3e50', padding: '3px 6px', borderRadius: 4, fontSize: 11, fontWeight: '600' }}>{s.estimated_duration_min}분</span></td>
+                  <td style={tdStyle}><span style={riskBadgeStyle(s.risk_score)}>{formatRisk(s.risk_score)}</span></td>
                   <td style={tdStyle}>
-                    <span style={badgeStyle(getStatusColor(alert.level))}>{alert.level}</span>
-                  </td>
-                  <td style={tdStyle}>{alert.message}</td>
-                  <td style={tdStyle}>
-                    <span style={badgeStyle(getStatusColor(alert.status))}>{alert.status}</span>
-                  </td>
-                  <td style={tdStyle}>{alert.action || '확인'}</td>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 22, minWidth: 64 }}>
+    <span style={statusBadgeStyle(s.status)}>{getStatusText(s.status)}</span>
+    {s.status !== 'done' && (
+      <select
+        defaultValue="select"
+        onChange={(e) => { if (e.target.value !== "select") onStatusChange(s.id, e.target.value); }}
+        style={{
+          fontSize: 11,
+          padding: '2px 4px',
+          borderRadius: 4,
+          border: '1px solid #bdc3c7',
+          backgroundColor: 'white',
+          color: '#2c3e50',
+          minWidth: 64,
+          height: 22,
+          lineHeight: '22px'
+        }}
+      >
+        <option value="select" disabled>선택</option>
+        <option value="done">완료</option>
+      </select>
+    )}
+  </div>
+</td>
                 </tr>
               ))}
             </tbody>
           </table>
-
-          <div style={paginationStyle}>
-            <div>총 {alerts.length}건 (1/1 페이지)</div>
-            <div>
-              <button style={pageBtnStyle}>이전</button>
-              <button style={{ ...pageBtnStyle, marginLeft: 8 }}>다음</button>
-            </div>
-          </div>
-        </div>
-
-        {/* 설정 및 수신자 */}
-        <div style={sectionTitle}>⚙️ 알림 설정</div>
-        <div style={grayBoxStyle}>
-          <div>✅ 알림 기준값 설정, 시간대별 알림 제어, 특정 이벤트 활성화 여부 등을 설정할 수 있습니다.</div>
-        </div>
-
-        <div style={sectionTitle}>👥 수신자 관리</div>
-        <div style={grayBoxStyle}>
-          <div>📧 알림을 받을 담당자 목록을 관리하고, 이메일/SMS 수신 여부를 설정할 수 있습니다.</div>
         </div>
       </main>
     </div>

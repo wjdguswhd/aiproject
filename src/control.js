@@ -1,6 +1,7 @@
 // src/control.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import ControlDesign from './assets/controldesign';
 
 const Control = () => {
@@ -11,11 +12,21 @@ const Control = () => {
     { name: '지도', path: '/map' },
     { name: '대시보드', path: '/dashboard' },
     { name: '장비 제어', path: '/control' },
-    { name: '데이터 분석', path: '/data' },
     { name: '알림 관리', path: '/alarm' },
+    { name: '데이터 분석', path: '/data' },
     { name: '설정', path: '/settings' },
     { name: '시스템 로그', path: '/system-logs' },
   ];
+
+  // 하수구 목록과 선택 상태
+  const [drainList, setDrainList] = useState([]);
+  const [selectedDrain, setSelectedDrain] = useState(''); // 초기값은 빈 문자열
+
+  useEffect(() => {
+    axios.get('http://192.168.1.106:8000/api/accountapp/drains/')
+      .then(res => setDrainList(res.data))
+      .catch(err => console.error(err));
+  }, []);
 
   const onClickMenu = (menu) => {
     setActiveMenu(menu.name);
@@ -32,7 +43,7 @@ const Control = () => {
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
       }}>
         <div>스마트 하수구 관리 시스템</div>
-        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자님 환영합니다</div>
+        <div style={{ fontSize: 14, fontWeight: 'normal' }}>관리자</div>
       </header>
 
       {/* Navigation */}
@@ -61,7 +72,7 @@ const Control = () => {
         ))}
       </nav>
 
-      {/* 메인 콘텐츠 */}
+      {/* Main Content */}
       <main style={{
         marginLeft: 200,
         marginTop: 60,
@@ -70,7 +81,11 @@ const Control = () => {
         backgroundColor: '#ecf0f1',
         padding: 20,
       }}>
-        <ControlDesign />
+        <ControlDesign
+          drainList={drainList}
+          selectedDrain={selectedDrain}
+          onSelectDrain={setSelectedDrain}
+        />
       </main>
     </div>
   );
