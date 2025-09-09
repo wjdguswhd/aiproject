@@ -54,13 +54,13 @@ const Map = () => {
   const getStatusAndColor = (value) => {
     if (value === null || value === undefined) return { status: 'normal', color: '#2ecc71' };
     if (value >= 20) return { status: 'danger', color: '#e74c3c' };
-    if (value >= 6) return { status: 'warning', color: '#f39c12' };
+    if (value >= 15) return { status: 'warning', color: '#f39c12' };
     return { status: 'normal', color: '#2ecc71' };
   };
 
   const fetchSewerData = async () => {
     try {
-      const res = await axios.get('http://192.168.1.106:8000/api/accountapp/drains/');
+      const res = await axios.get('http://192.168.0.2:8000/api/accountapp/drains/');
       const formattedData = await Promise.all(
         res.data.map(async (item) => {
           let value = 0;
@@ -71,7 +71,7 @@ const Map = () => {
               name: item.name
             };
             const sensorRes = await axios.post(
-              'http://192.168.1.106:8000/api/accountapp/sensorvalue/',
+              'http://192.168.0.2:8000/api/accountapp/sensorvalue/',
               postData,
               { headers: { 'Content-Type': 'application/json' } }
             );
@@ -190,7 +190,7 @@ const Map = () => {
 
           try {
             await axios.post(
-              'http://192.168.1.106:8000/api/accountapp/drains/',
+              'http://192.168.0.2:8000/api/accountapp/drains/',
               newSewer,
               { headers: { 'Content-Type': 'application/json' } }
             );

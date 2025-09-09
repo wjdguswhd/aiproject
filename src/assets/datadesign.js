@@ -45,7 +45,7 @@ const DataDesign = ({ activeMenu, menuItems, onMenuClick, kakaoMap, teams, selec
               <ul style={{ marginTop: 5, paddingLeft: 15, fontSize: 12 }}>
                 {team.tasks.map((task, idx) => (
                   <li key={idx} style={{ marginBottom: 5 }}>
-                    <div>{task.location_name} - {task.risk_level}</div>
+                    <div>{task.location_name}</div>
                     <div style={{ fontSize: 11, color: '#555' }}>예정시작: {task.scheduled_start}</div>
                     <div style={{ fontSize: 11, color: '#555' }}>예정종료: {task.scheduled_end}</div>
                     <div style={{ fontSize: 11, color: '#555' }}>예상 소요: {task.estimated_duration_min}분</div>

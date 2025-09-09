@@ -103,13 +103,13 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSewerData = async () => {
   try {
-    const res = await axios.get('http://192.168.1.106:8000/api/accountapp/drains/');
+    const res = await axios.get('http://192.168.0.2:8000/api/accountapp/drains/');
     const formattedData = await Promise.all(
       res.data.map(async (item) => {
         let value = 0;
         try {
           const sensorRes = await axios.post(
-            'http://192.168.1.106:8000/api/accountapp/sensorvalue/',
+            'http://192.168.0.2:8000/api/accountapp/sensorvalue/',
             {
               region: item.region || '경기도',
               sub_region: item.sub_region || '고양시',
@@ -128,7 +128,7 @@ const Dashboard = () => {
         const getStatusAndColor = (val) => {
           if (val === null || val === undefined) return { status: 'normal', color: '#2ecc71' };
           if (val >= 20) return { status: 'danger', color: '#e74c3c' };
-          if (val >= 6) return { status: 'warning', color: '#f39c12' };
+          if (val >= 15) return { status: 'warning', color: '#f39c12' };
           return { status: 'normal', color: '#2ecc71' };
         };
 
@@ -168,7 +168,7 @@ const Dashboard = () => {
       };
 
       const response = await axios.post(
-        "http://192.168.1.106:8000/api/accountapp/sensorvalue/",
+        "http://192.168.0.2:8000/api/accountapp/sensorvalue/",
         postData,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -178,7 +178,7 @@ const Dashboard = () => {
       const calcStatus = (val) => {
         if (val === null || val === undefined) return { status: "데이터 없음", color: "#95a5a6" };
         if (val >= 20) return { status: "danger", color: "#e74c3c" };
-        if (val >= 6) return { status: "warning", color: "#f39c12" };
+        if (val >= 15) return { status: "warning", color: "#f39c12" };
         return { status: "normal", color: "#2ecc71" };
       };
 

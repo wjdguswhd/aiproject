@@ -1,4 +1,3 @@
-// src/control.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -18,12 +17,11 @@ const Control = () => {
     { name: '시스템 로그', path: '/system-logs' },
   ];
 
-  // 하수구 목록과 선택 상태
   const [drainList, setDrainList] = useState([]);
-  const [selectedDrain, setSelectedDrain] = useState(''); // 초기값은 빈 문자열
+  const [selectedDrain, setSelectedDrain] = useState('');
 
   useEffect(() => {
-    axios.get('http://192.168.1.106:8000/api/accountapp/drains/')
+    axios.get('http://192.168.0.2:8000/api/accountapp/drains/')
       .then(res => setDrainList(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -31,6 +29,47 @@ const Control = () => {
   const onClickMenu = (menu) => {
     setActiveMenu(menu.name);
     navigate(menu.path);
+  };
+
+  // 하드웨어 제어
+  const handleManualStart = async () => {
+    if (!selectedDrain) return alert('하수구를 선택하세요');
+    try {
+      await axios.post('http://192.168.0.2:8000/api/control/start/', { drain_name: selectedDrain });
+      return { success: true, device: '청소 모터', task: '수동 시작' };
+    } catch (err) {
+      alert('제어 시작 실패');
+      return { success: false, device: '청소 모터', task: '수동 시작' };
+    }
+  };
+
+  const handleManualStop = async () => {
+    if (!selectedDrain) return alert('하수구를 선택하세요');
+    try {
+      await axios.post('http://192.168.0.2:8000/api/control/stop/', { drain_name: selectedDrain });
+      return { success: true, device: '청소 모터', task: '수동 정지' };
+    } catch (err) {
+      alert('제어 정지 실패');
+      return { success: false, device: '청소 모터', task: '수동 정지' };
+    }
+  };
+
+  // 예약 청소 POST
+  const handleScheduleSave = async (startTime, endTime, selectedDays) => {
+    if (!selectedDrain) return alert('하수구를 선택하세요');
+    try {
+      await axios.post('http://192.168.0.2:8000/api/control/schedule/', {
+        drain_name: selectedDrain,
+        start_time: startTime,
+        end_time: endTime,
+        days: selectedDays
+      });
+      alert('스케줄 저장 완료');
+      return true;
+    } catch (err) {
+      alert('스케줄 저장 실패');
+      return false;
+    }
   };
 
   return (
@@ -85,6 +124,9 @@ const Control = () => {
           drainList={drainList}
           selectedDrain={selectedDrain}
           onSelectDrain={setSelectedDrain}
+          onManualStart={handleManualStart}
+          onManualStop={handleManualStop}
+          onScheduleSave={handleScheduleSave} // 추가
         />
       </main>
     </div>

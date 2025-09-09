@@ -58,7 +58,7 @@ const AlarmDesign = ({ activeMenu, menuItems, schedules, onMenuClick, onStatusCh
   const statLabelStyle = { fontSize: 12, color: '#7f8c8d', fontWeight: '500' };
   const tableContainerStyle = { backgroundColor: 'white', borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' };
   const tableHeaderStyle = { backgroundColor: '#34495e', color: 'white', padding: '15px 20px', fontSize: 16, fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-  const tableStyle = { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }; // fixed layout 추가
+  const tableStyle = { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' };
   const thStyle = { backgroundColor: '#2c3e50', color: 'white', padding: '12px 15px', fontSize: 13, fontWeight: '600', textAlign: 'left' };
   const tdStyle = { backgroundColor: 'white', padding: '12px 15px', fontSize: 13, color: '#2c3e50', borderBottom: '1px solid #ecf0f1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
 
@@ -72,24 +72,12 @@ const AlarmDesign = ({ activeMenu, menuItems, schedules, onMenuClick, onStatusCh
     return { backgroundColor: style.bg, color: 'white', padding: '4px 8px', borderRadius: 12, fontSize: 11, fontWeight: '600', display: 'inline-block', minWidth: 48, textAlign: 'center' };
   };
 
-  const riskBadgeStyle = (risk) => {
-    let bgColor;
-    if (risk >= 80) { bgColor = '#e74c3c'; }
-    else if (risk >= 60) { bgColor = '#f39c12'; }
-    else if (risk >= 40) { bgColor = '#f1c40f'; }
-    else { bgColor = '#27ae60'; }
-    return { backgroundColor: bgColor, color: 'white', padding: '3px 6px', borderRadius: 10, fontSize: 11, fontWeight: '600', display: 'inline-block' };
-  };
-
-  const formatRisk = (risk) => Number.isInteger(risk) ? risk : risk.toFixed(1);
-  const getStatusText = (status) => ({ 'scheduled': '예정됨', 'done': '완료됨', 'cancelled': '취소됨' }[status] || status);
   const formatUTCDate = (datetime) => new Date(datetime).toISOString().slice(0,10);
   const formatUTCTime = (datetime) => new Date(datetime).toISOString().slice(11,16);
 
   const totalSchedules = schedules.length;
   const scheduledCount = schedules.filter(s => s.status === 'scheduled').length;
   const completedCount = schedules.filter(s => s.status === 'done').length;
-  const highRiskCount = schedules.filter(s => s.risk_score >= 80).length;
 
   const filteredSchedules = statusFilter === "all" ? schedules : schedules.filter(s => s.status === statusFilter);
 
@@ -114,7 +102,6 @@ const AlarmDesign = ({ activeMenu, menuItems, schedules, onMenuClick, onStatusCh
           <div style={statCardStyle}><div style={{...statNumberStyle, color: '#3498db'}}>{totalSchedules}</div><div style={statLabelStyle}>전체 스케줄</div></div>
           <div style={statCardStyle}><div style={{...statNumberStyle, color: '#f39c12'}}>{scheduledCount}</div><div style={statLabelStyle}>예정된 작업</div></div>
           <div style={statCardStyle}><div style={{...statNumberStyle, color: '#2ecc71'}}>{completedCount}</div><div style={statLabelStyle}>완료된 작업</div></div>
-          <div style={statCardStyle}><div style={{...statNumberStyle, color: '#e74c3c'}}>{highRiskCount}</div><div style={statLabelStyle}>위험 지역</div></div>
         </div>
 
         <div style={tableContainerStyle}>
@@ -137,7 +124,6 @@ const AlarmDesign = ({ activeMenu, menuItems, schedules, onMenuClick, onStatusCh
                 <th style={thStyle}>예정 시작</th>
                 <th style={thStyle}>예정 종료</th>
                 <th style={thStyle}>소요시간</th>
-                <th style={thStyle}>위험도</th>
                 <th style={thStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 120 }}>
                     상태
@@ -163,32 +149,31 @@ const AlarmDesign = ({ activeMenu, menuItems, schedules, onMenuClick, onStatusCh
                   <td style={tdStyle}><div style={{ fontSize: 12, fontWeight: '500' }}>{formatUTCDate(s.scheduled_start)}</div><div style={{ fontSize: 11, color: '#7f8c8d' }}>{formatUTCTime(s.scheduled_start)}</div></td>
                   <td style={tdStyle}><div style={{ fontSize: 12, fontWeight: '500' }}>{formatUTCDate(s.scheduled_end)}</div><div style={{ fontSize: 11, color: '#7f8c8d' }}>{formatUTCTime(s.scheduled_end)}</div></td>
                   <td style={tdStyle}><span style={{ backgroundColor: '#ecf0f1', color: '#2c3e50', padding: '3px 6px', borderRadius: 4, fontSize: 11, fontWeight: '600' }}>{s.estimated_duration_min}분</span></td>
-                  <td style={tdStyle}><span style={riskBadgeStyle(s.risk_score)}>{formatRisk(s.risk_score)}</span></td>
                   <td style={tdStyle}>
-  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 22, minWidth: 64 }}>
-    <span style={statusBadgeStyle(s.status)}>{getStatusText(s.status)}</span>
-    {s.status !== 'done' && (
-      <select
-        defaultValue="select"
-        onChange={(e) => { if (e.target.value !== "select") onStatusChange(s.id, e.target.value); }}
-        style={{
-          fontSize: 11,
-          padding: '2px 4px',
-          borderRadius: 4,
-          border: '1px solid #bdc3c7',
-          backgroundColor: 'white',
-          color: '#2c3e50',
-          minWidth: 64,
-          height: 22,
-          lineHeight: '22px'
-        }}
-      >
-        <option value="select" disabled>선택</option>
-        <option value="done">완료</option>
-      </select>
-    )}
-  </div>
-</td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 22, minWidth: 64 }}>
+                      <span style={statusBadgeStyle(s.status)}>{s.status === 'scheduled' ? '예정됨' : s.status === 'done' ? '완료됨' : '취소됨'}</span>
+                      {s.status !== 'done' && (
+                        <select
+                          defaultValue="select"
+                          onChange={(e) => { if (e.target.value !== "select") onStatusChange(s.id, e.target.value); }}
+                          style={{
+                            fontSize: 11,
+                            padding: '2px 4px',
+                            borderRadius: 4,
+                            border: '1px solid #bdc3c7',
+                            backgroundColor: 'white',
+                            color: '#2c3e50',
+                            minWidth: 64,
+                            height: 22,
+                            lineHeight: '22px'
+                          }}
+                        >
+                          <option value="select" disabled>선택</option>
+                          <option value="done">완료</option>
+                        </select>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

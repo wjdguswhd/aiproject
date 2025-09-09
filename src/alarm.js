@@ -18,7 +18,7 @@ const Alarm = () => {
   }, []);
 
   const fetchSchedules = () => {
-    axios.get('http://192.168.1.106:8000/maintenance/crews/tasks')
+    axios.get('http://192.168.0.2:8000/maintenance/crews/tasks')
       .then(res => {
         if (res.data && Array.isArray(res.data.crews)) {
           const flattenedSchedules = res.data.crews.flatMap(crewItem =>
@@ -61,7 +61,7 @@ const Alarm = () => {
       prev.map(s => s.id === taskId ? { ...s, status: newStatus } : s)
     );
 
-    axios.post('http://192.168.1.106:8000/maintenance/crews/tasks', {
+    axios.post('http://192.168.0.2:8000/maintenance/crews/tasks', {
       task_id: taskId,
       status: newStatus
     })
@@ -71,40 +71,39 @@ const Alarm = () => {
 
   // 상태 필터링 처리 (상태 글씨 옆 드롭다운에서 선택 시)
   const handleStatusFilterChange = (newFilter) => {
-  setStatusFilter(newFilter);
+    setStatusFilter(newFilter);
 
-  if (newFilter === 'done') {
-    axios.get('http://192.168.1.106:8000/maintenance/tasks/')
-      .then(res => {
-        if (Array.isArray(res.data)) {
-          const doneTasks = res.data
-            .filter(task => task.status === 'done') // done만
-            .map(task => ({
-              id: task.id,
-              status: task.status,
-              scheduled_start: task.scheduled_start,
-              scheduled_end: task.scheduled_end,
-              drain: task.drain,
-              lat: task.lat,
-              lng: task.lng,
-              assigned_crew: `팀 ${task.assigned_crew}`, // 숫자를 이름으로 변환
-              estimated_duration_min: task.estimated_duration_min,
-              risk_score: task.risk_score
-            }));
-          setSchedules(doneTasks);
-        }
-      })
-      .catch(err => console.error('완료 작업 불러오기 오류:', err));
-  } else {
-    // all 또는 scheduled는 기존 fetchSchedules 사용
-    fetchSchedules();
-  }
-};
-
+    if (newFilter === 'done') {
+      axios.get('http://192.168.0.2:8000/maintenance/tasks/')
+        .then(res => {
+          if (Array.isArray(res.data)) {
+            const doneTasks = res.data
+              .filter(task => task.status === 'done') // done만
+              .map(task => ({
+                id: task.id,
+                status: task.status,
+                scheduled_start: task.scheduled_start,
+                scheduled_end: task.scheduled_end,
+                drain: task.drain,
+                lat: task.lat,
+                lng: task.lng,
+                assigned_crew: `팀 ${task.assigned_crew}`, // 숫자를 이름으로 변환
+                estimated_duration_min: task.estimated_duration_min,
+                risk_score: task.risk_score
+              }));
+            setSchedules(doneTasks);
+          }
+        })
+        .catch(err => console.error('완료 작업 불러오기 오류:', err));
+    } else {
+      // all 또는 scheduled는 기존 fetchSchedules 사용
+      fetchSchedules();
+    }
+  };
 
   // 스케줄 생성 처리
   const handleCreateSchedule = () => {
-    axios.post('http://192.168.1.106:8000/maintenance/predict-and-generate-tasks/')
+    axios.post('http://192.168.0.2:8000/maintenance/predict-and-generate-tasks/')
       .then(res => {
         if (res.data && Array.isArray(res.data)) {
           setSchedules(res.data);
