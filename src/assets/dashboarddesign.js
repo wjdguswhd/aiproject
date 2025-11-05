@@ -81,13 +81,13 @@ const DashboardDesign = ({
           let color = '#2ecc71';
           let status = 'normal';
           if (sewer.value !== null && sewer.value !== undefined) {
-            if (sewer.value >= 20) {
+            if (sewer.value >= 7) {
               color = '#e74c3c';
               status = 'danger';
-            } else if (sewer.value >= 15) {
+            } else if (sewer.value >= 3) {
               color = '#f39c12';
               status = 'warning';
-            } else if (sewer.value >= 0) {
+            } else if (sewer.value >= -1) {
               color = '#2ecc71';
               status = 'normal';
             } else {
@@ -169,7 +169,7 @@ const DashboardDesign = ({
 
         {/* 센서 상태 */}
         <section style={{ flex: 1.8, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* 기존 센서/모터 카드 */}
+          {/* 하수구 환경 카드 */}
           <div style={{
             backgroundColor: '#ecf0f1',
             borderRadius: 5,
@@ -178,7 +178,7 @@ const DashboardDesign = ({
             boxSizing: 'border-box',
           }}>
             <h2 style={{ marginTop: 0, fontSize: 14, fontWeight: 'bold', color: '#2c3e50' }}>하수구 환경</h2>
-            <div style={{ display: 'flex', gap: 15 }}>
+            <div style={{ display: 'flex', gap: 15, justifyContent: 'space-between' }}>
               {/* 수거함 현황 */}
               <div style={{
                 backgroundColor: 'white',
@@ -217,29 +217,39 @@ const DashboardDesign = ({
                 <div style={{ width: 30, height: 30, backgroundColor: sensorsStatus.rainfallColor, borderRadius: '50%', marginTop: 5 }} />
               </div>
             </div>
-          </div>
 
-          {/* 모터 상태 */}
-          <div style={{
-            backgroundColor: '#ecf0f1',
-            borderRadius: 5,
-            padding: 15,
-            flex: 1,
-            border: '1px solid #bdc3c7',
-            boxSizing: 'border-box',
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: 14, fontWeight: 'bold', color: '#2c3e50' }}>작동 상태</h2>
-            <div style={{ display: 'flex', gap: 20 }}>
-              <div style={{ backgroundColor: 'white', borderRadius: 5, border: '1px solid #bdc3c7', flex: 1, padding: 10 }}>
-                <p style={{ fontWeight: 'bold', fontSize: 12, color: '#2c3e50' }}>청소 모터</p>
-                <p style={{ color: '#27ae60', fontSize: 20, fontWeight: 'bold' }}>{motorStatus.cleanMotor.status}</p>
-              </div>
-              <div style={{ backgroundColor: 'white', borderRadius: 5, border: '1px solid #bdc3c7', flex: 1, padding: 10 }}>
-                <p style={{ fontWeight: 'bold', fontSize: 12, color: '#2c3e50' }}>비 감지 센서</p>
-                <p style={{ color: '#27ae60', fontSize: 20, fontWeight: 'bold' }}>{motorStatus.rainSensor.status}</p>
-                <p style={{ fontSize: 12, color: '#2c3e50' }}>{motorStatus.rainSensor.mode}</p>
-              </div>
-            </div>
+            {/* 비 감지 센서 (중앙 하단 배치) */}
+<div style={{
+  marginTop: 15,
+  display: 'flex',
+  justifyContent: 'center'
+}}>
+  <div style={{
+    backgroundColor: 'white',
+    borderRadius: 5,
+    border: '1px solid #bdc3c7',
+    width: '45%',
+    padding: 10,
+    textAlign: 'left'   // ⬅️ 중앙 정렬에서 왼쪽 정렬로 변경
+  }}>
+    <p style={{ fontWeight: 'bold', fontSize: 12, color: '#2c3e50' }}>비 감지 센서</p>
+    <p style={{
+      color: sensorsStatus.rainSensor?.status === '감지됨' ? '#3498db' : '#95a5a6',
+      fontSize: 20,
+      fontWeight: 'bold'
+    }}>
+      {sensorsStatus.rainSensor?.status || '데이터 없음'}
+    </p>
+    <div style={{
+      width: 30,
+      height: 30,
+      backgroundColor: sensorsStatus.rainSensor?.status === '감지됨' ? '#3498db' : '#95a5a6',
+      borderRadius: '50%',
+      marginTop: 5
+    }} />
+  </div>
+</div>
+
           </div>
         </section>
       </div>

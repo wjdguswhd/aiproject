@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const menuItems = [
-  '지도', '대시보드', '장비 제어', '알림 관리', '데이터 분석', '설정', '시스템 로그'
-];
+  '지도', '대시보드', '장비 제어', '스케줄링', '경로 안내'];
 
 const Alarm = () => {
-  const [activeMenu, setActiveMenu] = useState('알림 관리');
+  const [activeMenu, setActiveMenu] = useState('스케줄링');
   const [schedules, setSchedules] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all'); // 상태 필터
   const navigate = useNavigate();
@@ -18,7 +17,7 @@ const Alarm = () => {
   }, []);
 
   const fetchSchedules = () => {
-    axios.get('http://192.168.0.2:8000/maintenance/crews/tasks')
+    axios.get('http://192.168.79.45:8000/maintenance/crews/tasks')
       .then(res => {
         if (res.data && Array.isArray(res.data.crews)) {
           const flattenedSchedules = res.data.crews.flatMap(crewItem =>
@@ -48,9 +47,7 @@ const Alarm = () => {
       case '대시보드': navigate('/dashboard'); break;
       case '장비 제어': navigate('/control'); break;
       case '스케줄링': navigate('/scheduling'); break;
-      case '데이터 분석': navigate('/data'); break;
-      case '설정': navigate('/settings'); break;
-      case '시스템 로그': navigate('/logs'); break;
+      case '경로 안내': navigate('/data'); break;
       default: break;
     }
   };
@@ -61,7 +58,7 @@ const Alarm = () => {
       prev.map(s => s.id === taskId ? { ...s, status: newStatus } : s)
     );
 
-    axios.post('http://192.168.0.2:8000/maintenance/crews/tasks', {
+    axios.post('http://192.168.79.45:8000/maintenance/crews/tasks', {
       task_id: taskId,
       status: newStatus
     })
@@ -74,7 +71,7 @@ const Alarm = () => {
     setStatusFilter(newFilter);
 
     if (newFilter === 'done') {
-      axios.get('http://192.168.0.2:8000/maintenance/tasks/')
+      axios.get('http://192.168.79.45:8000/maintenance/tasks/')
         .then(res => {
           if (Array.isArray(res.data)) {
             const doneTasks = res.data
@@ -103,7 +100,7 @@ const Alarm = () => {
 
   // 스케줄 생성 처리
   const handleCreateSchedule = () => {
-    axios.post('http://192.168.0.2:8000/maintenance/predict-and-generate-tasks/')
+    axios.post('http://192.168.79.45:8000/maintenance/predict-and-generate-tasks/')
       .then(res => {
         if (res.data && Array.isArray(res.data)) {
           setSchedules(res.data);

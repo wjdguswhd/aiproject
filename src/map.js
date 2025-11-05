@@ -4,7 +4,7 @@ import axios from 'axios';
 import MapDesign from './assets/mapdesign';
 
 const menuItems = [
-  '지도', '대시보드', '장비 제어', '알림 관리', '데이터 분석', '설정', '시스템 로그'
+  '지도', '대시보드', '장비 제어', '스케줄링', '경로 안내'
 ];
 
 const Map = () => {
@@ -21,10 +21,8 @@ const Map = () => {
       case '지도': navigate('/map'); break;
       case '대시보드': navigate('/dashboard'); break;
       case '장비 제어': navigate('/control'); break;
-      case '알림 관리': navigate('/alarm'); break;
-      case '데이터 분석': navigate('/data'); break;
-      case '설정': navigate('/settings'); break;
-      case '시스템 로그': navigate('/system-logs'); break;
+      case '스케줄링': navigate('/alarm'); break;
+      case '경로 안내': navigate('/data'); break;
       default: break;
     }
   };
@@ -46,21 +44,21 @@ const Map = () => {
     switch (status) {
       case 'danger': return '위험';
       case 'warning': return '주의';
-      case 'normal': return '정상';
+      case 'normal': return '안정';
       default: return '알 수 없음';
     }
   };
 
   const getStatusAndColor = (value) => {
     if (value === null || value === undefined) return { status: 'normal', color: '#2ecc71' };
-    if (value >= 20) return { status: 'danger', color: '#e74c3c' };
-    if (value >= 15) return { status: 'warning', color: '#f39c12' };
+    if (value >= 7) return { status: 'danger', color: '#e74c3c' };
+    if (value >= 3) return { status: 'warning', color: '#f39c12' };
     return { status: 'normal', color: '#2ecc71' };
   };
 
   const fetchSewerData = async () => {
     try {
-      const res = await axios.get('http://192.168.0.2:8000/api/accountapp/drains/');
+      const res = await axios.get('http://192.168.79.45:8000/api/accountapp/drains/');
       const formattedData = await Promise.all(
         res.data.map(async (item) => {
           let value = 0;
@@ -71,7 +69,7 @@ const Map = () => {
               name: item.name
             };
             const sensorRes = await axios.post(
-              'http://192.168.0.2:8000/api/accountapp/sensorvalue/',
+              'http://192.168.79.45:8000/api/accountapp/sensorvalue/',
               postData,
               { headers: { 'Content-Type': 'application/json' } }
             );
@@ -109,7 +107,7 @@ const Map = () => {
 
   const deleteSewer = async (id) => {
     try {
-      await axios.delete(`http://192.168.0.2:8000/api/accountapp/drains/${id}/`);
+      await axios.delete(`http://192.168.79.45:8000/api/accountapp/drains/${id}/`);
       setSelectedSewer(null);
       await fetchSewerData();
     } catch (err) {
@@ -190,7 +188,7 @@ const Map = () => {
 
           try {
             await axios.post(
-              'http://192.168.0.2:8000/api/accountapp/drains/',
+              'http://192.168.79.45:8000/api/accountapp/drains/',
               newSewer,
               { headers: { 'Content-Type': 'application/json' } }
             );

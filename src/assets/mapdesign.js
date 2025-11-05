@@ -283,7 +283,7 @@ const MapDesign = ({
           <div style={legendItemStyle}>
             <div style={circleStyle('#2ecc71')} />
             <span>
-              정상 (적재량 60% 미만, {sewerData.filter(s => s.status === 'normal').length}개)
+              안정 (적재량 60% 미만, {sewerData.filter(s => s.status === 'normal').length}개)
             </span>
           </div>
         </div>

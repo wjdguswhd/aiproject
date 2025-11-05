@@ -1,6 +1,6 @@
 import React from 'react';
 
-const DataDesign = ({ activeMenu, menuItems, onMenuClick, kakaoMap, teams, selectedTeam, onSelectTeam }) => {
+const DataDesign = ({ activeMenu, menuItems, onMenuClick, kakaoMap, teams, selectedTeam, onSelectTeam, onStartNavigationToTask }) => {
   const containerStyle = { position: 'relative', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', backgroundColor: '#ecf0f1', overflow: 'hidden' };
   const headerStyle = { height: 60, backgroundColor: '#2c3e50', color: 'white', display: 'flex', alignItems: 'center', padding: '0 20px', fontWeight: 'bold', fontSize: 18, justifyContent: 'space-between' };
   const navStyle = { position: 'absolute', top: 60, left: 0, width: 200, height: 'calc(100% - 60px)', backgroundColor: '#34495e', padding: '20px 10px', boxSizing: 'border-box', color: 'white', overflowY: 'auto' };
@@ -37,11 +37,17 @@ const DataDesign = ({ activeMenu, menuItems, onMenuClick, kakaoMap, teams, selec
         <div id="kakao-map" style={mapAreaStyle} />
 
         <div style={sidePanelStyle}>
-          <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>팀별 최적 경로</div>
+          <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>팀별 작업 안내</div>
           {teams.map(team => (
-            <div key={team.team_id} style={teamCardStyle(selectedTeam && selectedTeam.team_id === team.team_id)} onClick={() => onSelectTeam(team)}>
+            <div
+              key={team.team_id}
+              style={teamCardStyle(selectedTeam && selectedTeam.team_id === team.team_id)}
+              onClick={() => onSelectTeam(team)}
+            >
               <div style={{ fontWeight: 'bold', marginBottom: 5 }}>{team.team_name}</div>
               <div style={{ fontSize: 12, color: '#555' }}>작업 수: {team.tasks.length}</div>
+
+              {/* 각 task별 단일 길 안내 버튼 */}
               <ul style={{ marginTop: 5, paddingLeft: 15, fontSize: 12 }}>
                 {team.tasks.map((task, idx) => (
                   <li key={idx} style={{ marginBottom: 5 }}>
@@ -49,6 +55,21 @@ const DataDesign = ({ activeMenu, menuItems, onMenuClick, kakaoMap, teams, selec
                     <div style={{ fontSize: 11, color: '#555' }}>예정시작: {task.scheduled_start}</div>
                     <div style={{ fontSize: 11, color: '#555' }}>예정종료: {task.scheduled_end}</div>
                     <div style={{ fontSize: 11, color: '#555' }}>예상 소요: {task.estimated_duration_min}분</div>
+                    <button
+                      style={{
+                        marginTop: 2,
+                        fontSize: 11,
+                        padding: '2px 4px',
+                        backgroundColor: '#3498db',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 2,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => onStartNavigationToTask(task, team)}
+                    >
+                      길 안내
+                    </button>
                   </li>
                 ))}
               </ul>

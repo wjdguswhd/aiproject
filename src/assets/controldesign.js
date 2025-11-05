@@ -7,7 +7,7 @@ const ControlDesign = ({ drainList, selectedDrain, onSelectDrain, onManualStart,
   const [saved, setSaved] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyData, setHistoryData] = useState([
-    { time: '2024-12-19 14:35', device: '청소 모터', task: '수동 시작', status: '성공', user: '관리자', result: '정상' },
+    { time: '2025-9-10 16:10', device: '청소 모터', task: '수동 시작', status: '성공', user: '관리자', result: '정상' },
   ]);
   const [selectedDays, setSelectedDays] = useState(['수', '토']);
 
@@ -15,9 +15,11 @@ const ControlDesign = ({ drainList, selectedDrain, onSelectDrain, onManualStart,
   const [startPeriod, setStartPeriod] = useState('오전');
   const [startHour, setStartHour] = useState('09');
   const [startMinute, setStartMinute] = useState('00');
+  const [startSecond, setStartSecond] = useState('00'); // 초 추가
   const [endPeriod, setEndPeriod] = useState('오후');
   const [endHour, setEndHour] = useState('06');
   const [endMinute, setEndMinute] = useState('00');
+  const [endSecond, setEndSecond] = useState('00'); // 초 추가
 
   const getCurrentTime = () => {
     const now = new Date();
@@ -32,8 +34,8 @@ const ControlDesign = ({ drainList, selectedDrain, onSelectDrain, onManualStart,
 
   const handleSave = async () => {
     if (!onScheduleSave) return;
-    const startTime = `${startHour}:${startMinute} ${startPeriod}`;
-    const endTime = `${endHour}:${endMinute} ${endPeriod}`;
+    const startTime = `${startHour}:${startMinute}:${startSecond} ${startPeriod}`;
+    const endTime = `${endHour}:${endMinute}:${endSecond} ${endPeriod}`;
     try {
       const success = await onScheduleSave(startTime, endTime, selectedDays);
       setSaved(success);
@@ -68,6 +70,7 @@ const ControlDesign = ({ drainList, selectedDrain, onSelectDrain, onManualStart,
 
   const hours = Array.from({length:13}, (_,i)=>i.toString().padStart(2,'0'));
   const minutes = Array.from({length:60}, (_,i)=>i.toString().padStart(2,'0'));
+  const seconds = Array.from({length:60}, (_,i)=>i.toString().padStart(2,'0')); // 초 배열
 
   return (
     <div style={{ padding:20, backgroundColor:'#ecf0f1', minHeight:'100vh', fontFamily:'Arial, sans-serif' }}>
@@ -142,8 +145,12 @@ const ControlDesign = ({ drainList, selectedDrain, onSelectDrain, onManualStart,
                 <select value={startMinute} onChange={e=>setStartMinute(e.target.value)} style={{height:36, width:60, borderRadius:5, border:'1px solid #bdc3c7', paddingLeft:5, backgroundColor:'#f8f9fa', fontSize:14, cursor:'pointer'}}>
                   {minutes.map(m => <option key={m}>{m}</option>)}
                 </select>
+                <span style={{fontSize:16, fontWeight:'bold'}}>:</span>
+                <select value={startSecond} onChange={e=>setStartSecond(e.target.value)} style={{height:36, width:60, borderRadius:5, border:'1px solid #bdc3c7', paddingLeft:5, backgroundColor:'#f8f9fa', fontSize:14, cursor:'pointer'}}>
+                  {seconds.map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
-              <span style={{fontSize:16, fontWeight:'bold', color:'#2c3e50',paddingLeft:93}}>~</span>
+              <span style={{fontSize:16, fontWeight:'bold', color:'#2c3e50',paddingLeft:135}}>~</span>
               {/* 종료 시간 */}
               <div style={{display:'flex', alignItems:'center', gap:8}}>
                 <select value={endPeriod} onChange={e=>setEndPeriod(e.target.value)} style={{height:36, width:60, borderRadius:5, border:'1px solid #bdc3c7', paddingLeft:5, backgroundColor:'#f8f9fa', fontSize:14, cursor:'pointer'}}>
@@ -157,11 +164,15 @@ const ControlDesign = ({ drainList, selectedDrain, onSelectDrain, onManualStart,
                 <select value={endMinute} onChange={e=>setEndMinute(e.target.value)} style={{height:36, width:60, borderRadius:5, border:'1px solid #bdc3c7', paddingLeft:5, backgroundColor:'#f8f9fa', fontSize:14, cursor:'pointer'}}>
                   {minutes.map(m => <option key={m}>{m}</option>)}
                 </select>
+                <span style={{fontSize:16, fontWeight:'bold'}}>:</span>
+                <select value={endSecond} onChange={e=>setEndSecond(e.target.value)} style={{height:36, width:60, borderRadius:5, border:'1px solid #bdc3c7', paddingLeft:5, backgroundColor:'#f8f9fa', fontSize:14, cursor:'pointer'}}>
+                  {seconds.map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
             </div>
 
             {/* 중앙 - 요일 선택 */}
-            <div style={{flex:1, display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'35px 5px', justifyItems:'center', marginLeft:-200}}>
+            <div style={{flex:1, display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'35px 5px', justifyItems:'center', marginLeft: -50}}>
               {['월','화','수','목','금','토','일'].map((day, idx) => (
                 <div key={day} onClick={()=>toggleDay(day)} style={{
                   width:50, height:35,

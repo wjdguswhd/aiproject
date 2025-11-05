@@ -11,17 +11,16 @@ const Control = () => {
     { name: '지도', path: '/map' },
     { name: '대시보드', path: '/dashboard' },
     { name: '장비 제어', path: '/control' },
-    { name: '알림 관리', path: '/alarm' },
-    { name: '데이터 분석', path: '/data' },
-    { name: '설정', path: '/settings' },
-    { name: '시스템 로그', path: '/system-logs' },
+    { name: '스케줄링', path: '/alarm' },
+    { name: '경로 안내', path: '/data' }
   ];
 
   const [drainList, setDrainList] = useState([]);
   const [selectedDrain, setSelectedDrain] = useState('');
+  const [scheduleInterval, setScheduleInterval] = useState(null); // 수정: interval 상태 추가
 
   useEffect(() => {
-    axios.get('http://192.168.0.2:8000/api/accountapp/drains/')
+    axios.get('http://192.168.79.45:8000/api/accountapp/drains/')
       .then(res => setDrainList(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -33,43 +32,80 @@ const Control = () => {
 
   // 하드웨어 제어
   const handleManualStart = async () => {
-    if (!selectedDrain) return alert('하수구를 선택하세요');
     try {
-      await axios.post('http://192.168.0.2:8000/api/control/start/', { drain_name: selectedDrain });
+      await axios.post('http://192.168.122.196:5001/motor', { command: 'forward' });
+      console.log('✅ 수동 모터 시작 POST 성공');
       return { success: true, device: '청소 모터', task: '수동 시작' };
     } catch (err) {
+      console.error('❌ 수동 모터 시작 POST 실패', err);
       alert('제어 시작 실패');
       return { success: false, device: '청소 모터', task: '수동 시작' };
     }
   };
 
   const handleManualStop = async () => {
-    if (!selectedDrain) return alert('하수구를 선택하세요');
     try {
-      await axios.post('http://192.168.0.2:8000/api/control/stop/', { drain_name: selectedDrain });
+      await axios.post('http://192.168.122.196:5001/motor', { command: 'stop' });
+      console.log('✅ 수동 모터 정지 POST 성공');
       return { success: true, device: '청소 모터', task: '수동 정지' };
     } catch (err) {
+      console.error('❌ 수동 모터 정지 POST 실패', err);
       alert('제어 정지 실패');
       return { success: false, device: '청소 모터', task: '수동 정지' };
     }
   };
 
-  // 예약 청소 POST
-  const handleScheduleSave = async (startTime, endTime, selectedDays) => {
-    if (!selectedDrain) return alert('하수구를 선택하세요');
-    try {
-      await axios.post('http://192.168.0.2:8000/api/control/schedule/', {
-        drain_name: selectedDrain,
-        start_time: startTime,
-        end_time: endTime,
-        days: selectedDays
-      });
-      alert('스케줄 저장 완료');
-      return true;
-    } catch (err) {
-      alert('스케줄 저장 실패');
-      return false;
-    }
+  // 예약 청소 프론트 처리 (요일 + 시간 체크, 초 단위 정확 실행)
+  const handleScheduleSaveFront = (startTime, endTime, selectedDays) => {
+    const drainName = selectedDrain || '기본 하수구';
+    console.log(`📅 예약 저장 요청: 하수구=${drainName}, 시작=${startTime}, 종료=${endTime}, 요일=${selectedDays}`);
+
+    const parseTime = (timeStr) => {
+      let [h, m, s, period] = timeStr.split(/[: ]/);
+      h = Number(h);
+      m = Number(m);
+      s = Number(s);
+      if (period === '오후' && h < 12) h += 12;
+      if (period === '오전' && h === 12) h = 0;
+      return h * 60 + m + s / 60;
+    };
+
+    const startMinutes = parseTime(startTime);
+    const endMinutes = parseTime(endTime);
+
+    const dayMap = { '일':0, '월':1, '화':2, '수':3, '목':4, '금':5, '토':6 };
+    const selectedDayNums = selectedDays.map(d => dayMap[d]);
+
+    let alreadyStarted = false;
+    let alreadyStopped = false;
+
+    if (scheduleInterval) clearInterval(scheduleInterval); // 이전 interval 제거
+
+    const intervalId = setInterval(async () => {
+      const now = new Date();
+      const todayDay = now.getDay();
+      if (!selectedDayNums.includes(todayDay)) return;
+
+      const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+      if (currentMinutes >= startMinutes && currentMinutes < startMinutes + 1/60 && !alreadyStarted) {
+        console.log('🚀 예약 시간 도달, 모터 실행 시작');
+        alreadyStarted = true;
+        alreadyStopped = false;
+        await handleManualStart();
+      }
+
+      if (currentMinutes >= endMinutes && currentMinutes < endMinutes + 1/60 && !alreadyStopped) {
+        console.log('🛑 예약 종료, 모터 정지');
+        alreadyStopped = true;
+        alreadyStarted = false;
+        await handleManualStop();
+      }
+    }, 1000);
+
+    setScheduleInterval(intervalId);
+
+    return Promise.resolve(true); // 저장 성공 Promise 반환
   };
 
   return (
@@ -126,7 +162,7 @@ const Control = () => {
           onSelectDrain={setSelectedDrain}
           onManualStart={handleManualStart}
           onManualStop={handleManualStop}
-          onScheduleSave={handleScheduleSave} // 추가
+          onScheduleSave={handleScheduleSaveFront} // 프론트 예약 적용
         />
       </main>
     </div>
